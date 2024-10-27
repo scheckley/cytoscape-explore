@@ -10,8 +10,10 @@ ENV NODE_ENV=${NODE_ENV:-production}
 # Switch to a non-root user and create a directory structure for them
 RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -s /sbin/nologin appuser
 
-# Create app directory and set permissions
-RUN mkdir -p /home/appuser/app && chown -R appuser:appuser /home/appuser/app
+# Create necessary directories and set permissions
+RUN mkdir -p /home/appuser/app /home/appuser/.npm && \
+    chown -R appuser:appuser /home/appuser
+
 WORKDIR /home/appuser/app
 
 # Copy the source code to the app directory
