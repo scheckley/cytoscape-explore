@@ -1,39 +1,43 @@
+# Use node:14.18.3 as the base image
 FROM node:14.18.3
 
 # Allow user configuration of variable at build-time using --build-arg flag
 ARG NODE_ENV
 
 # Initialize environment and override with build-time flag, if set
-ENV NODE_ENV ${NODE_ENV:-production}
+ENV NODE_ENV=${NODE_ENV:-production}
 
-# Create an unprivileged user w/ home directory
-RUN groupadd appuser \
-  && useradd --gid appuser --shell /bin/bash --create-home appuser
+# Switch to a non-root user and create a directory structure for them
+RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -s /sbin/nologin appuser
 
-# Create app directory
-RUN mkdir -p /home/appuser/app
+# Create app directory and set permissions
+RUN mkdir -p /home/appuser/app && chown -R appuser:appuser /home/appuser/app
 WORKDIR /home/appuser/app
 
-# Copy in source code
-COPY . /home/appuser/app
+# Copy the source code to the app directory
+COPY --chown=appuser:appuser . /home/appuser/app
 
-# Install app dependencies
-# Puppeteer requirements
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 libxtst6 gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget \
-      --no-install-recommends \
+# Install app dependencies as appuser to avoid root-level installs
+USER appuser
+RUN npm ci --only=production
+
+# Puppeteer and other dependencies
+USER root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    google-chrome-stable \
+    fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \
+    libxss1 libxtst6 libasound2 libatk1.0-0 libatk-bridge2.0-0 libcairo2 libcups2 libdbus-1-3 libexpat1 \
+    libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 \
+    libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 \
+    libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 ca-certificates fonts-liberation libappindicator1 \
+    libnss3 lsb-release xdg-utils wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Note: NODE_ENV is development so that dev deps are installed
-RUN NODE_ENV=development npm ci
+# Expose port 8080 instead of 3000 for OpenShift
+EXPOSE 8080
 
-# Expose port
-EXPOSE 3000
-
-# Change ownership of the app to the unprivileged user
-RUN chown appuser:appuser -R /home/appuser/app
+# Use appuser for the runtime
 USER appuser
 
 # Apply start commands
