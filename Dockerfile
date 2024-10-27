@@ -1,5 +1,5 @@
-# Use node:14.18.3 as the base image
-FROM node:14.18.3
+# Use node:14-buster as the base image to use a supported Debian version
+FROM node:14-buster
 
 # Allow user configuration of variable at build-time using --build-arg flag
 ARG NODE_ENV
