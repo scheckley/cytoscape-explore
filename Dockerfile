@@ -6,19 +6,17 @@ ARG NODE_ENV
 ENV NODE_ENV=${NODE_ENV:-production}
 
 # Create a numeric user/group that fits OpenShift's requirements
-# OpenShift will override this with a random UID but the directory structure remains
 RUN groupadd -r -g 1001 appgroup && useradd -r -g appgroup -u 1001 appuser
 
 # Create app directory and set permissions - critical for OpenShift
 RUN mkdir -p /app /app/.npm /app/.local/share/applications \
-    /app/.config/google-chrome /app/.cache/google-chrome && \
+    /app/.config/google-chrome /app/.cache/google-chrome /app/.config && \
     chown -R 1001:1001 /app && \
     chmod -R g+rwx /app
 
 WORKDIR /app
 
 # Install system dependencies including Chrome
-# Do this before switching to non-root user
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \
@@ -42,19 +40,26 @@ COPY --chown=1001:1001 . /app/
 # Switch to non-root user
 USER 1001
 
-# Set environment variables for Chrome
+# Set environment variables for Chrome and npm
 ENV HOME=/app \
     CHROME_PATH=/usr/bin/google-chrome \
     XDG_DATA_HOME=/app/.local/share \
     NPM_CONFIG_PREFIX=/app/.npm \
-    PATH="/app/.npm/bin:${PATH}"
+    PATH="/app/.npm/bin:${PATH}" \
+    SKIP_PREFLIGHT_CHECK=true
+
+# Install global dependencies
+RUN npm install -g npm-run-all rimraf
 
 # Install dependencies
 RUN npm ci --only=production
 
+# Copy and set permissions for entrypoint
+COPY --chown=1001:1001 entrypoint.sh /app/
+RUN chmod +x /app/entrypoint.sh
+
 # Expose port 8080 for OpenShift
 EXPOSE 8080
 
-# Copy and set entrypoint
-COPY --chown=1001:1001 entrypoint.sh /app/
-CMD ["/app/entrypoint.sh"]
+# Set the entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
