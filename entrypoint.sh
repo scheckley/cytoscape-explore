@@ -7,11 +7,13 @@ mkdir -p $HOME/.config/google-chrome
 mkdir -p $HOME/.cache/google-chrome
 mkdir -p $HOME/.config
 
-# Ensure npm has required dependencies
-npm install -g npm-run-all
+# Ensure npm cache directories have correct permissions
+mkdir -p $HOME/.npm/_cacache
+mkdir -p $HOME/.npm/_logs
+chmod -R g+rwx $HOME/.npm
 
 # Clean and build with proper directory permissions
-cd /app  # Make sure we're in the right directory
+cd /app
 npm run clean
 npm run build
 
