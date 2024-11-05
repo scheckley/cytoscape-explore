@@ -1,30 +1,24 @@
-# Use node:14-buster as the base image to use a supported Debian version
+# Use node:14-buster as the base image
 FROM node:14-buster
 
-# Allow user configuration of variable at build-time using --build-arg flag
+# Allow user configuration of variable at build-time
 ARG NODE_ENV
-
-# Initialize environment and override with build-time flag, if set
 ENV NODE_ENV=${NODE_ENV:-production}
 
-# Switch to a non-root user and create a directory structure for them
-RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -s /sbin/nologin appuser
+# Create a numeric user/group that fits OpenShift's requirements
+# OpenShift will override this with a random UID but the directory structure remains
+RUN groupadd -r -g 1001 appgroup && useradd -r -g appgroup -u 1001 appuser
 
-# Create necessary directories and set permissions
-RUN mkdir -p /home/appuser/app /home/appuser/.npm && \
-    chown -R appuser:appuser /home/appuser
+# Create app directory and set permissions - critical for OpenShift
+RUN mkdir -p /app /app/.npm /app/.local/share/applications \
+    /app/.config/google-chrome /app/.cache/google-chrome && \
+    chown -R 1001:1001 /app && \
+    chmod -R g+rwx /app
 
-WORKDIR /home/appuser/app
+WORKDIR /app
 
-# Copy the source code to the app directory
-COPY --chown=appuser:appuser . /home/appuser/app
-
-# Install app dependencies as appuser to avoid root-level installs
-USER appuser
-RUN npm ci --only=production
-
-# Switch to root to install system dependencies, including Google Chrome
-USER root
+# Install system dependencies including Chrome
+# Do this before switching to non-root user
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \
@@ -35,19 +29,32 @@ RUN apt-get update && \
     libnss3 lsb-release xdg-utils wget gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Add Google Chrome’s signing key and repository
+# Install Chrome
 RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
     echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list && \
     apt-get update && \
     apt-get install -y google-chrome-stable && \
     rm -rf /var/lib/apt/lists/*
 
-# Expose port 8080 instead of 3000 for OpenShift
+# Copy application files
+COPY --chown=1001:1001 . /app/
+
+# Switch to non-root user
+USER 1001
+
+# Set environment variables for Chrome
+ENV HOME=/app \
+    CHROME_PATH=/usr/bin/google-chrome \
+    XDG_DATA_HOME=/app/.local/share \
+    NPM_CONFIG_PREFIX=/app/.npm \
+    PATH="/app/.npm/bin:${PATH}"
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Expose port 8080 for OpenShift
 EXPOSE 8080
 
-# Use appuser for the runtime
-USER appuser
-
-# Apply start commands
-COPY entrypoint.sh /
-CMD ["/entrypoint.sh"]
+# Copy and set entrypoint
+COPY --chown=1001:1001 entrypoint.sh /app/
+CMD ["/app/entrypoint.sh"]
