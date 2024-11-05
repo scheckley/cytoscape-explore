@@ -5,25 +5,28 @@ FROM node:14-buster
 ARG NODE_ENV
 ENV NODE_ENV=${NODE_ENV:-production}
 
-# Create a numeric user/group that fits OpenShift's requirements
-RUN groupadd -r -g 1001 appgroup && useradd -r -g appgroup -u 1001 appuser
+# Set up environment variables first
+ENV NPM_CONFIG_PREFIX=/app/.npm \
+    PATH="/app/.npm/bin:${PATH}" \
+    HOME=/app \
+    CHROME_PATH=/usr/bin/google-chrome \
+    XDG_DATA_HOME=/app/.local/share \
+    SKIP_PREFLIGHT_CHECK=true
 
-# Set up npm configuration first
-ENV NPM_CONFIG_PREFIX=/app/.npm
-ENV PATH="/app/.npm/bin:${PATH}"
-ENV HOME=/app
-
-# Create app directory and set permissions - critical for OpenShift
-RUN mkdir -p /app /app/.npm /app/.local/share/applications \
-    /app/.config/google-chrome /app/.cache/google-chrome /app/.config && \
-    # Ensure npm cache directories are created with correct permissions
-    mkdir -p /app/.npm/_cacache /app/.npm/_logs && \
+# Create all required directories and set permissions
+# This must be done as root before switching to non-root user
+RUN mkdir -p /app && \
+    mkdir -p /app/.npm && \
+    mkdir -p /app/.local/share/applications && \
+    mkdir -p /app/.config/google-chrome && \
+    mkdir -p /app/.cache/google-chrome && \
+    mkdir -p /app/.config && \
+    mkdir -p /app/.npm/_cacache && \
+    mkdir -p /app/.npm/_logs && \
+    mkdir -p /app/build && \
     chown -R 1001:0 /app && \
-    chmod -R g+rwx /app && \
-    # Explicitly set npm cache permissions
-    chmod -R g+rwx /app/.npm
-
-WORKDIR /app
+    chmod -R g=u /app && \
+    chmod -R 775 /app
 
 # Install system dependencies including Chrome
 RUN apt-get update && \
@@ -43,13 +46,10 @@ RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add
     apt-get install -y google-chrome-stable && \
     rm -rf /var/lib/apt/lists/*
 
-# Switch to non-root user before npm operations
+# Switch to non-root user
 USER 1001
 
-# Set environment variables for Chrome
-ENV CHROME_PATH=/usr/bin/google-chrome \
-    XDG_DATA_HOME=/app/.local/share \
-    SKIP_PREFLIGHT_CHECK=true
+WORKDIR /app
 
 # Copy package files first
 COPY --chown=1001:0 package*.json ./
@@ -57,17 +57,17 @@ COPY --chown=1001:0 package*.json ./
 # Install dependencies including global packages
 RUN npm config set cache /app/.npm/_cacache && \
     npm ci --only=production && \
-    npm install -g npm-run-all rimraf
+    npm install -g npm-run-all rimraf && \
+    # Clear npm cache after installation
+    npm cache clean --force
 
 # Copy application files
 COPY --chown=1001:0 . .
-
-# Copy and set permissions for entrypoint
-COPY --chown=1001:0 entrypoint.sh ./
-RUN chmod +x /app/entrypoint.sh
 
 # Expose port 8080 for OpenShift
 EXPOSE 8080
 
 # Set the entrypoint
+COPY --chown=1001:0 entrypoint.sh ./
+RUN chmod 775 /app/entrypoint.sh
 ENTRYPOINT ["./entrypoint.sh"]
