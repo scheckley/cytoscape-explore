@@ -5,19 +5,18 @@ FROM node:18-bullseye-slim
 ARG NODE_ENV
 ENV NODE_ENV=${NODE_ENV:-production} \
     NPM_CONFIG_PREFIX=/app/.npm \
-    PATH="/app/.npm/bin:${PATH}" \
+    PATH="/app/.npm/bin:/app/node_modules/.bin:${PATH}" \
     HOME=/app \
     CHROME_PATH=/usr/bin/google-chrome \
     XDG_DATA_HOME=/app/.local/share \
     SKIP_PREFLIGHT_CHECK=true \
     # Chrome flags for running without root
-    CHROMIUM_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-dbus" \
+    CHROMIUM_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-dbus --disable-notifications --disable-extensions --disable-logging --disable-in-process-stack-traces --disable-crash-reporter --disable-permissions-api --disable-setuid-sandbox --no-zygote --single-process" \
     # Disable features that require privileged access
     CHROME_DBUS_SYSTEM_BUS_SOCKET=0 \
-    CHROME_OOM_SCORE_ADJUST=0
-
-
-ENV PATH="./node_modules/.bin:$PATH"
+    CHROME_OOM_SCORE_ADJUST=0 \
+    CHROME_LOG_FILE=/dev/null \
+    CHROME_LOG_LEVEL=3
 
 # Create non-root user and set up directory structure
 RUN useradd -u 1001 -r -g 0 -d /app appuser && \
@@ -31,9 +30,7 @@ RUN useradd -u 1001 -r -g 0 -d /app appuser && \
     /app/.npm/_cacache \
     /app/.npm/_logs \
     /app/build && \
-    # Create dummy dbus directory to prevent errors
     mkdir -p /var/run/dbus && \
-    # Set permissions
     chown -R 1001:0 /app && \
     chmod -R g=u /app && \
     chmod -R 775 /app
@@ -59,24 +56,89 @@ RUN apt-get update && \
 USER 1001
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package files first
 COPY --chown=1001:0 package*.json ./
 
-RUN npm install --no-global
-RUN chown -R 1001:0 /app && chmod -R g=u /app
-# Install ALL dependencies including devDependencies for build process
-RUN npm config set cache /app/.npm/_cacache --global && \
-    npm ci --unsafe-perm && \
-    npm install npm-run-all rimraf webpack webpack-cli --save-dev --unsafe-perm && \
+# Install dependencies with specific webpack setup for cytoscape-explore
+RUN npm config set cache /app/.npm/_cacache && \
+    # Remove any existing node_modules to ensure clean install
+    rm -rf node_modules && \
+    # Install dependencies without production flag to include dev dependencies
+    npm install && \
+    # Install specific webpack version locally
+    npm install --save-dev \
+    webpack@4.46.0 \
+    webpack-cli@4.9.2 \
+    webpack-dev-server@4.9.3 \
+    babel-loader@8.2.5 \
+    @babel/core@7.18.9 \
+    @babel/preset-env@7.18.9 \
+    style-loader@3.3.1 \
+    css-loader@6.7.1 && \
+    # Install global packages
+    npm install -g npm-run-all@4.1.5 rimraf@3.0.2 && \
+    # Create webpack executable link
+    ln -s /app/node_modules/.bin/webpack /app/.npm/bin/webpack && \
+    # Clean npm cache
     npm cache clean --force
 
 # Copy application files
 COPY --chown=1001:0 . .
 
-# Build the application
-RUN npm run build
+# Ensure the build directory exists and is writable
+RUN mkdir -p build && \
+    chmod 775 build
 
-# Remove devDependencies after build
+# Add a basic webpack config if it doesn't exist
+RUN if [ ! -f webpack.config.js ]; then \
+    echo 'module.exports = { \
+      mode: "production", \
+      entry: "./src/index.js", \
+      output: { \
+        filename: "bundle.js", \
+        path: __dirname + "/build", \
+        library: "cytoscapeExplore", \
+        libraryTarget: "umd" \
+      }, \
+      module: { \
+        rules: [ \
+          { \
+            test: /\.js$/, \
+            exclude: /node_modules/, \
+            use: { \
+              loader: "babel-loader", \
+              options: { \
+                presets: ["@babel/preset-env"] \
+              } \
+            } \
+          }, \
+          { \
+            test: /\.css$/, \
+            use: ["style-loader", "css-loader"] \
+          } \
+        ] \
+      }, \
+      externals: { \
+        "cytoscape": "cytoscape" \
+      } \
+    }' > webpack.config.js; \
+    fi
+
+# Try building with verbose output and error handling
+RUN set -x && \
+    echo "PATH is: $PATH" && \
+    echo "Webpack location: $(which webpack)" && \
+    echo "Directory contents:" && ls -la && \
+    echo "Running build..." && \
+    npm run build --verbose || { \
+        echo "Build failed. Package.json contents:"; \
+        cat package.json; \
+        echo "Node modules contents:"; \
+        ls -la node_modules/.bin; \
+        exit 1; \
+    }
+
+# Only remove devDependencies in production
 RUN if [ "${NODE_ENV}" = "production" ]; then \
     npm prune --production; \
     fi
