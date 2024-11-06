@@ -4,8 +4,8 @@ FROM node:18-bullseye-slim
 # Build arguments and environment variables
 ARG NODE_ENV
 ENV NODE_ENV=${NODE_ENV:-production} \
-    NPM_CONFIG_PREFIX=/app/.npm \
-    PATH="/app/.npm/bin:/app/node_modules/.bin:${PATH}" \
+    NPM_CONFIG_PREFIX=/app/.npm-global \
+    PATH="/app/.npm-global/bin:/app/node_modules/.bin:${PATH}" \
     HOME=/app \
     CHROME_PATH=/usr/bin/google-chrome \
     XDG_DATA_HOME=/app/.local/share \
@@ -22,13 +22,11 @@ ENV NODE_ENV=${NODE_ENV:-production} \
 RUN useradd -u 1001 -r -g 0 -d /app appuser && \
     mkdir -p \
     /app \
-    /app/.npm \
+    /app/.npm-global \
     /app/.local/share/applications \
     /app/.config/google-chrome \
     /app/.cache/google-chrome \
     /app/.config \
-    /app/.npm/_cacache \
-    /app/.npm/_logs \
     /app/build && \
     mkdir -p /var/run/dbus && \
     chown -R 1001:0 /app && \
@@ -59,26 +57,15 @@ WORKDIR /app
 # Copy package files first
 COPY --chown=1001:0 package*.json ./
 
-# Install dependencies with specific webpack setup for cytoscape-explore
-RUN npm config set cache /app/.npm/_cacache && \
-    # Remove any existing node_modules to ensure clean install
+# Install dependencies with improved error handling
+RUN npm config set cache /app/.npm-global/_cacache && \
+    # Clear npm cache and remove any existing modules
+    npm cache clean --force && \
     rm -rf node_modules && \
-    # Install dependencies without production flag to include dev dependencies
-    npm install && \
-    # Install specific webpack version locally
-    npm install --save-dev \
-    webpack@4.46.0 \
-    webpack-cli@4.9.2 \
-    webpack-dev-server@4.9.3 \
-    babel-loader@8.2.5 \
-    @babel/core@7.18.9 \
-    @babel/preset-env@7.18.9 \
-    style-loader@3.3.1 \
-    css-loader@6.7.1 && \
+    # Install all dependencies first
+    npm ci && \
     # Install global packages
     npm install -g npm-run-all@4.1.5 rimraf@3.0.2 && \
-    # Create webpack executable link
-    ln -s /app/node_modules/.bin/webpack /app/.npm/bin/webpack && \
     # Clean npm cache
     npm cache clean --force
 
