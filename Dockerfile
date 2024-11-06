@@ -61,7 +61,6 @@ COPY --chown=1001:0 package*.json ./
 
 RUN npm install --no-global
 RUN chown -R 1001:0 /app && chmod -R g=u /app
-
 # Install ALL dependencies including devDependencies for build process
 RUN npm config set cache /app/.npm/_cacache --global && \
     npm ci --unsafe-perm && \
