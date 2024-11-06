@@ -1,73 +1,86 @@
-# Use node:14-buster as the base image
-FROM node:14-buster
+# Use a more recent Node.js version with Debian Bullseye base
+FROM node:18-bullseye-slim
 
-# Allow user configuration of variable at build-time
+# Build arguments and environment variables
 ARG NODE_ENV
-ENV NODE_ENV=${NODE_ENV:-production}
-
-# Set up environment variables first
-ENV NPM_CONFIG_PREFIX=/app/.npm \
+ENV NODE_ENV=${NODE_ENV:-production} \
+    NPM_CONFIG_PREFIX=/app/.npm \
     PATH="/app/.npm/bin:${PATH}" \
     HOME=/app \
     CHROME_PATH=/usr/bin/google-chrome \
     XDG_DATA_HOME=/app/.local/share \
-    SKIP_PREFLIGHT_CHECK=true
+    SKIP_PREFLIGHT_CHECK=true \
+    # Chrome flags for running without root
+    CHROMIUM_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-dbus" \
+    # Disable features that require privileged access
+    CHROME_DBUS_SYSTEM_BUS_SOCKET=0 \
+    CHROME_OOM_SCORE_ADJUST=0
 
-# Create all required directories and set permissions
-# This must be done as root before switching to non-root user
-RUN mkdir -p /app && \
-    mkdir -p /app/.npm && \
-    mkdir -p /app/.local/share/applications && \
-    mkdir -p /app/.config/google-chrome && \
-    mkdir -p /app/.cache/google-chrome && \
-    mkdir -p /app/.config && \
-    mkdir -p /app/.npm/_cacache && \
-    mkdir -p /app/.npm/_logs && \
-    mkdir -p /app/build && \
+# Create non-root user and set up directory structure
+RUN useradd -u 1001 -r -g 0 -d /app appuser && \
+    mkdir -p \
+    /app \
+    /app/.npm \
+    /app/.local/share/applications \
+    /app/.config/google-chrome \
+    /app/.cache/google-chrome \
+    /app/.config \
+    /app/.npm/_cacache \
+    /app/.npm/_logs \
+    /app/build && \
+    # Create dummy dbus directory to prevent errors
+    mkdir -p /var/run/dbus && \
+    # Set permissions
     chown -R 1001:0 /app && \
     chmod -R g=u /app && \
     chmod -R 775 /app
 
-# Install system dependencies including Chrome
+# Install Chrome and dependencies in a single layer
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \
-    libxss1 libxtst6 libasound2 libatk1.0-0 libatk-bridge2.0-0 libcairo2 libcups2 libdbus-1-3 libexpat1 \
-    libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 \
-    libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 \
-    libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 ca-certificates fonts-liberation libappindicator1 \
-    libnss3 lsb-release xdg-utils wget gnupg \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Chrome
-RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    libxss1 libxtst6 libasound2 libatk1.0-0 libatk-bridge2.0-0 libcairo2 libcups2 \
+    libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 \
+    libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 \
+    libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 \
+    libxfixes3 libxi6 libxrandr2 libxrender1 ca-certificates fonts-liberation \
+    libappindicator1 libnss3 lsb-release xdg-utils wget gnupg && \
+    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
     echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list && \
     apt-get update && \
     apt-get install -y google-chrome-stable && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Switch to non-root user
 USER 1001
-
 WORKDIR /app
 
-# Copy package files first
+# Copy package files and install dependencies
 COPY --chown=1001:0 package*.json ./
 
-# Install dependencies including global packages
+# Install ALL dependencies including devDependencies for build process
 RUN npm config set cache /app/.npm/_cacache && \
-    npm ci --only=production && \
-    npm install -g npm-run-all rimraf && \
-    # Clear npm cache after installation
+    npm ci && \
+    npm install -g npm-run-all rimraf webpack webpack-cli && \
     npm cache clean --force
 
 # Copy application files
 COPY --chown=1001:0 . .
 
-# Expose port 8080 for OpenShift
-EXPOSE 8080
+# Build the application
+RUN npm run build
 
-# Set the entrypoint
+# Remove devDependencies after build
+RUN if [ "${NODE_ENV}" = "production" ]; then \
+    npm prune --production; \
+    fi
+
+# Copy and set up entrypoint script
 COPY --chown=1001:0 entrypoint.sh ./
 RUN chmod 775 /app/entrypoint.sh
+
+# Expose port for OpenShift
+EXPOSE 8080
+
 ENTRYPOINT ["./entrypoint.sh"]
