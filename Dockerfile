@@ -68,7 +68,7 @@ RUN chown -R 1001:0 /app && chmod -R g=u /app
 RUN npm config set cache /app/.npm/_cacache --global && \
     npm ci --unsafe-perm && \
     npm install npm-run-all rimraf webpack webpack-cli --save-dev --unsafe-perm && \
-    npm audit fix --force && npm cache clean --force
+    npm cache clean --force
 
 # Copy application files
 COPY --chown=1001:0 . .
