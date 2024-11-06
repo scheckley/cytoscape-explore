@@ -69,14 +69,14 @@ RUN npm config set cache /app/.npm/_cacache && \
     npm install --save-dev \
     webpack@4.46.0 \
     webpack-cli@4.9.2 \
-    webpack-dev-server@4.9.3 \
+    webpack-dev-server@3.11.3 \
     babel-loader@8.2.5 \
     @babel/core@7.18.9 \
     @babel/preset-env@7.18.9 \
-    style-loader@3.3.1 \
-    css-loader@6.7.1 && \
+    style-loader@2.0.0 \
+    css-loader@5.2.7 && \
     # Install global packages
-    npm install -g npm-run-all@4.1.5 rimraf@3.0.2 && \
+    npm install -g npm-run-all@4.1.5 rimraf@2.7.1 && \
     # Create webpack executable link
     ln -s /app/node_modules/.bin/webpack /app/.npm/bin/webpack && \
     # Clean npm cache
