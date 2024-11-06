@@ -27,7 +27,7 @@
     "bundle:css-deps": "postcss src/styles/deps.css -o build/deps.css",
     "watch:css-deps": "postcss --watch src/styles/deps.css -o build/deps.css",
     "bundle": "run-s bundle:*",
-    "build": "npx run-p bundle",
+    "build": "npm-run-all bundle:*",
     "build-prod": "cross-env NODE_ENV=production run-s build",
     "clean": "rimraf build/*",
     "lint": "run-s lint:*",
