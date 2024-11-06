@@ -60,11 +60,12 @@ WORKDIR /app
 COPY --chown=1001:0 package*.json ./
 
 RUN npm install --no-global
+RUN chown -R 1001:0 /app && chmod -R g=u /app
 
 # Install ALL dependencies including devDependencies for build process
-RUN npm config set cache /app/.npm/_cacache && \
-    npm ci && \
-    npm install npm-run-all rimraf webpack webpack-cli && \
+RUN npm config set cache /app/.npm/_cacache --global && \
+    npm ci --unsafe-perm && \
+    npm install npm-run-all rimraf webpack webpack-cli --save-dev --unsafe-perm && \
     npm cache clean --force
 
 # Copy application files
