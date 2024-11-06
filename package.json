@@ -119,14 +119,14 @@
     "postcss-preset-env": "^6.7.0",
     "postcss-url": "^8.0.0",
     "rimraf": "^2.7.1",
-    "style-loader": "^3.3.1",
-    "css-loader": "^6.7.1",
+    "style-loader": "^2.0.0",
+    "css-loader": "^5.2.7",
     "stylelint": "^13.2.1",
     "stylelint-config-standard": "^20.0.0",
     "webpack": "^4.46.0",
     "webpack-bundle-analyzer": "^3.6.1",
     "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "^4.9.3"
+    "webpack-dev-server": "^3.11.3"
   },
   "engines": {
     "node": "18"

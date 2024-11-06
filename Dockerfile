@@ -1,135 +1,140 @@
-{
-  "name": "cytoscape-explore",
-  "version": "0.0.0",
-  "description": "WIP",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/cytoscape/cytoscape-home.git"
-  },
-  "bugs": {
-    "url": "https://github.com/cytoscape/cytoscape-home/issues"
-  },
-  "homepage": "https://github.com/cytoscape/cytoscape-home",
-  "scripts": {
-    "start": "node -r dotenv-defaults/config -r dotenv/config -r esm ./src/server",
-    "inspect": "node inspect --inspect-brk -r dotenv-defaults/config -r dotenv/config -r esm ./src/server",
-    "bundle-profile": "cross-env NODE_ENV=production PROFILE=true webpack --profile",
-    "lint:js": "eslint ./src",
-    "fix:js": "eslint ./src --fix",
-    "bundle:js": "webpack",
-    "watch:js": "webpack --watch",
-    "watch:sync-bundle": "livereload \"build, src/views\" -w 1000",
-    "watch:sync-server": "nodemon -r dotenv-defaults/config -r dotenv/config -r esm src/server/index.js",
-    "lint:css": "stylelint src/**/*.css",
-    "fix:css": "stylelint src/**/*.css --fix",
-    "bundle:css": "postcss src/styles/index.css -o build/main.css",
-    "watch:css": "postcss --verbose --watch src/styles/index.css -o build/main.css",
-    "bundle:css-deps": "postcss src/styles/deps.css -o build/deps.css",
-    "watch:css-deps": "postcss --watch src/styles/deps.css -o build/deps.css",
-    "build": "run-s bundle:*",
-    "build-prod": "cross-env NODE_ENV=production run-s build",
-    "clean": "rimraf build/*",
-    "lint": "run-s lint:*",
-    "fix": "run-s fix:*",
-    "watch": "run-p watch:*",
-    "test:mocha": "cross-env TESTING=true mocha -r dotenv-defaults/config -r dotenv/config -r esm --exit",
-    "test:bundle": "run-s bundle",
-    "test": "run-s test:mocha test:bundle lint"
-  },
-  "dependencies": {
-    "@js4cytoscape/ndex-client": "0.3.2",
-    "@material-ui/core": "^4.12.4",
-    "@material-ui/icons": "^4.9.1",
-    "@material-ui/lab": "^4.0.0-alpha.56",
-    "@material-ui/styles": "^4.10.0",
-    "@popperjs/core": "^2.10.2",
-    "@tippyjs/react": "^4.2.0",
-    "body-parser": "^1.19.0",
-    "btoa": "^1.2.1",
-    "chart.js": "^3.5.1",
-    "chartjs-plugin-annotation": "^1.0.2",
-    "classnames": "^2.2.6",
-    "color": "^3.1.2",
-    "color-convert": "^2.0.1",
-    "cookie-parser": "^1.4.5",
-    "cytoscape": "^3.20.0",
-    "cytoscape-cola": "^2.4.0",
-    "cytoscape-dagre": "^2.3.2",
-    "cytoscape-edgehandles": "^4.0.1",
-    "cytoscape-fcose": "^1.2.3",
-    "cytoscape-popper": "^1.0.7",
-    "cytosnap": "^3.1.0",
-    "dotenv": "^6.2.0",
-    "dotenv-defaults": "^5.0.0",
-    "esm": "^3.2.25",
-    "eventemitter3": "^3.1.2",
-    "express": "^4.17.1",
-    "express-http-proxy": "^1.6.2",
-    "file-saver": "^2.0.5",
-    "fready": "^1.0.0",
-    "gaussian": "^1.2.0",
-    "http-proxy-middleware": "^0.19.1",
-    "localforage": "^1.10.0",
-    "lodash": "^4.17.21",
-    "material-ui-dropzone": "^3.5.0",
-    "material-ui-image": "^3.3.2",
-    "mathjs": "^9.5.1",
-    "morgan": "^1.10.0",
-    "node-fetch": "^2.6.7",
-    "pouchdb": "^7.2.1",
-    "pouchdb-adapter-memory": "^7.2.1",
-    "prop-types": "^15.7.2",
-    "react": "^16.13.1",
-    "react-chartjs-2": "^3.0.5",
-    "react-dom": "^16.13.1",
-    "react-google-login": "^5.2.2",
-    "react-popper": "^2.2.5",
-    "react-router-dom": "^5.1.2",
-    "react-transition-group": "^4.4.2",
-    "regenerator-runtime": "^0.13.5",
-    "serve-favicon": "^2.5.0",
-    "tippy.js": "^6.2.7",
-    "uuid": "^3.4.0",
-    "whatwg-fetch": "^3.0.0",
-    "winston": "^3.2.1",
-    "xlsx": "^0.17.2",
-    "xmlhttprequest-cookie": "^0.9.9"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.18.9",
-    "@babel/preset-env": "^7.18.9",
-    "@babel/preset-react": "^7.9.1",
-    "babel-loader": "^8.2.5",
-    "chai": "^4.2.0",
-    "core-js": "^3.6.4",
-    "cross-env": "^5.2.1",
-    "cssnano": "^4.1.10",
-    "dotenv-webpack": "^8.0.0",
-    "echo-cli": "^1.0.8",
-    "eslint": "^8.50.0",
-    "eslint-plugin-react": "^7.32.0",
-    "livereload": "^0.9.1",
-    "mocha": "^8.4.0",
-    "nodemon": "^1.19.4",
-    "normalize.css": "^8.0.1",
-    "npm-run-all": "^4.1.5",
-    "postcss": "^7.0.39",
-    "postcss-cli": "^6.1.3",
-    "postcss-import": "^12.0.1",
-    "postcss-preset-env": "^6.7.0",
-    "postcss-url": "^8.0.0",
-    "rimraf": "^2.7.1",
-    "style-loader": "^2.0.0",
-    "css-loader": "^5.2.7",
-    "stylelint": "^13.2.1",
-    "stylelint-config-standard": "^20.0.0",
-    "webpack": "^4.46.0",
-    "webpack-bundle-analyzer": "^3.6.1",
-    "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "^3.11.3"
-  },
-  "engines": {
-    "node": "18"
-  },
-  "browserslist": "safari 13"
-}
+# Use a more recent Node.js version with Debian Bullseye base
+FROM node:18-bullseye-slim
+
+# Build arguments and environment variables
+ARG NODE_ENV
+ENV NODE_ENV=${NODE_ENV:-production} \
+    NPM_CONFIG_PREFIX=/app/.npm-global \
+    PATH="/app/.npm-global/bin:/app/node_modules/.bin:${PATH}" \
+    HOME=/app \
+    CHROME_PATH=/usr/bin/google-chrome \
+    XDG_DATA_HOME=/app/.local/share \
+    SKIP_PREFLIGHT_CHECK=true \
+    # Chrome flags for running without root
+    CHROMIUM_FLAGS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-dbus --disable-notifications --disable-extensions --disable-logging --disable-in-process-stack-traces --disable-crash-reporter --disable-permissions-api --disable-setuid-sandbox --no-zygote --single-process" \
+    # Disable features that require privileged access
+    CHROME_DBUS_SYSTEM_BUS_SOCKET=0 \
+    CHROME_OOM_SCORE_ADJUST=0 \
+    CHROME_LOG_FILE=/dev/null \
+    CHROME_LOG_LEVEL=3
+
+# Create non-root user and set up directory structure
+RUN useradd -u 1001 -r -g 0 -d /app appuser && \
+    mkdir -p \
+    /app \
+    /app/.npm-global \
+    /app/.local/share/applications \
+    /app/.config/google-chrome \
+    /app/.cache/google-chrome \
+    /app/.config \
+    /app/build && \
+    mkdir -p /var/run/dbus && \
+    chown -R 1001:0 /app && \
+    chmod -R g=u /app && \
+    chmod -R 775 /app
+
+# Install Chrome and dependencies in a single layer
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf \
+    libxss1 libxtst6 libasound2 libatk1.0-0 libatk-bridge2.0-0 libcairo2 libcups2 \
+    libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 \
+    libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 \
+    libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 \
+    libxfixes3 libxi6 libxrandr2 libxrender1 ca-certificates fonts-liberation \
+    libappindicator1 libnss3 lsb-release xdg-utils wget gnupg && \
+    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list && \
+    apt-get update && \
+    apt-get install -y google-chrome-stable && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Switch to non-root user
+USER 1001
+WORKDIR /app
+
+# Copy package files first
+COPY --chown=1001:0 package*.json ./
+
+# Install dependencies with improved error handling
+RUN npm config set cache /app/.npm-global/_cacache && \
+    # Clear npm cache and remove any existing modules
+    npm cache clean --force && \
+    rm -rf node_modules && \
+    # Install all dependencies with legacy peer deps to handle old webpack
+    npm ci --legacy-peer-deps && \
+    # Install global packages
+    npm install -g npm-run-all@4.1.5 rimraf@3.0.2 && \
+    # Clean npm cache
+    npm cache clean --force
+
+# Copy application files
+COPY --chown=1001:0 . .
+
+# Ensure the build directory exists and is writable
+RUN mkdir -p build && \
+    chmod 775 build
+
+# Add a basic webpack config if it doesn't exist
+RUN if [ ! -f webpack.config.js ]; then \
+    echo 'module.exports = { \
+      mode: "production", \
+      entry: "./src/index.js", \
+      output: { \
+        filename: "bundle.js", \
+        path: __dirname + "/build", \
+        library: "cytoscapeExplore", \
+        libraryTarget: "umd" \
+      }, \
+      module: { \
+        rules: [ \
+          { \
+            test: /\.js$/, \
+            exclude: /node_modules/, \
+            use: { \
+              loader: "babel-loader", \
+              options: { \
+                presets: ["@babel/preset-env"] \
+              } \
+            } \
+          }, \
+          { \
+            test: /\.css$/, \
+            use: ["style-loader", "css-loader"] \
+          } \
+        ] \
+      }, \
+      externals: { \
+        "cytoscape": "cytoscape" \
+      } \
+    }' > webpack.config.js; \
+    fi
+
+# Try building with verbose output and error handling
+RUN set -x && \
+    echo "PATH is: $PATH" && \
+    echo "Webpack location: $(which webpack)" && \
+    echo "Directory contents:" && ls -la && \
+    echo "Running build..." && \
+    npm run build --verbose || { \
+        echo "Build failed. Package.json contents:"; \
+        cat package.json; \
+        echo "Node modules contents:"; \
+        ls -la node_modules/.bin; \
+        exit 1; \
+    }
+
+# Only remove devDependencies in production
+RUN if [ "${NODE_ENV}" = "production" ]; then \
+    npm prune --production; \
+    fi
+
+# Copy and set up entrypoint script
+COPY --chown=1001:0 entrypoint.sh ./
+RUN chmod 775 /app/entrypoint.sh
+
+# Expose port for OpenShift
+EXPOSE 8080
+
+ENTRYPOINT ["./entrypoint.sh"]
