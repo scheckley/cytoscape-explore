@@ -16,6 +16,9 @@ ENV NODE_ENV=${NODE_ENV:-production} \
     CHROME_DBUS_SYSTEM_BUS_SOCKET=0 \
     CHROME_OOM_SCORE_ADJUST=0
 
+
+ENV PATH="./node_modules/.bin:$PATH"
+
 # Create non-root user and set up directory structure
 RUN useradd -u 1001 -r -g 0 -d /app appuser && \
     mkdir -p \
