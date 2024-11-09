@@ -17,12 +17,44 @@ WORKDIR /home/appuser/app
 # Copy application source code to app directory
 COPY . .
 
+# Install dependencies required for Chromium
+RUN apt-get update && apt-get install -y \
+    chromium \
+    fonts-ipafont-gothic \
+    fonts-wqy-zenhei \
+    fonts-thai-tlwg \
+    fonts-kacst \
+    fonts-freefont-ttf \
+    libxss1 \
+    libxtst6 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcairo2 \
+    libdbus-1-3 \
+    libexpat1 \
+    libfontconfig1 \
+    libgdk-pixbuf2.0-0 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libnss3 \
+    --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
 # Configure npm to use the user's .npm directory
 ENV NPM_CONFIG_CACHE=/home/appuser/.npm
 
-# Switch to unprivileged user and install dependencies
+# Install app dependencies as appuser
 USER appuser
-RUN npm install --no-optional --legacy-peer-deps
+RUN npm ci --no-optional
 
 # Expose the application port
 EXPOSE 3000
