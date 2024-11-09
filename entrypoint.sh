@@ -1,4 +1,8 @@
 #!/bin/bash
+# entrypoint.sh
+
+# Run any pre-start tasks
 npm run clean
-npm run build
-cd /home/appuser/app && npm run start
+
+# Start the application
+npm start
