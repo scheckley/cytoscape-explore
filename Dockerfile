@@ -7,6 +7,7 @@ ENV NODE_ENV ${NODE_ENV:-production}
 
 ENV PORT=3000
 ENV BASE_URL='0.0.0.0'
+ENV COUCHDB_URL='https://couchdb-k8-scp012-dxm01.apps.ocp.osprey.hartree.stfc.ac.uk/'
 
 # Update the sources list to use Debian archives and remove stretch-updates
 RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
