@@ -60,7 +60,7 @@ ENV NPM_CONFIG_CACHE=/home/appuser/.npm
 
 # Install app dependencies as appuser
 USER appuser
-RUN npm ci --no-optional
+RUN npm install --no-optional
 
 # Expose the application port
 EXPOSE 3000
