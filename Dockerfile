@@ -5,6 +5,9 @@ FROM node:14.18.3
 ARG NODE_ENV
 ENV NODE_ENV ${NODE_ENV:-production}
 
+ENV PORT=3000
+ENV BASE_URL='0.0.0.0'
+
 # Update the sources list to use Debian archives and remove stretch-updates
 RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list && \
     sed -i 's|security.debian.org|archive.debian.org|g' /etc/apt/sources.list && \
