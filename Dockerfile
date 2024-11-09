@@ -22,7 +22,7 @@ ENV NPM_CONFIG_CACHE=/home/appuser/.npm
 
 # Switch to unprivileged user and install dependencies
 USER appuser
-RUN npm ci --no-optional
+RUN npm install --no-optional --legacy-peer-deps
 
 # Expose the application port
 EXPOSE 3000
