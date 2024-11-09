@@ -31,4 +31,4 @@ EXPOSE 3000
 COPY entrypoint.sh /
 
 # Start the application
-CMD ["/entrypoint.sh"]
+CMD ["/bin/bash", "/entrypoint.sh"]
